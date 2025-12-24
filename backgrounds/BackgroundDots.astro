@@ -1,0 +1,78 @@
+---
+const {
+  gap = 28,            // Space between dots
+  dot = 1.5,           // Dot radius
+  opacity = 0.25,      // Opacity
+  driftSeconds = 22    // Speed of drift
+} = Astro.props;
+
+// Pass variables via inline style object
+const cssVars = {
+  '--gap': `${gap}px`,
+  '--dot': `${dot}px`,
+  '--opacity': opacity,
+  '--driftSeconds': `${driftSeconds}s`,
+};
+---
+
+<div class="dots-wrap" aria-hidden="true" style={cssVars} transition:persist>
+  <div class="dots"></div>
+</div>
+
+<style>
+  .dots-wrap {
+    position: fixed;
+    inset: 0;
+    z-index: -1; 
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .dots {
+    position: absolute;
+    /* We expand the container slightly to ensure we never see an edge 
+      during the animation, though the background-repeat handles most of this.
+    */
+    inset: 0;
+    
+    /* Hardware acceleration */
+    transform: translateZ(0); 
+    
+    /* 1. THEME AWARE COLOR 
+      Uses --dot-color so it works in Dark Mode 
+    */
+    background-image: radial-gradient(
+      circle, 
+      rgba(var(--dot-color), var(--opacity)) var(--dot), 
+      transparent calc(var(--dot) + 0.5px)
+    );
+    
+    background-size: var(--gap) var(--gap);
+    
+    /* Fades the dots out towards the edges */
+    mask-image: radial-gradient(
+      closest-side at 50% 50%, 
+      black, 
+      transparent
+    );
+    
+    animation: drift var(--driftSeconds) linear infinite;
+
+    /* Light Mode Default (Black Dots) */
+    --dot-color: 0, 0, 0;
+  }
+
+  /* Dark Mode Override (White Dots) */
+  :global(.darkmode) .dots {
+    --dot-color: 255, 255, 255;
+  }
+
+  /* 2. SEAMLESS LOOP 
+     By moving exactly the size of one "gap", the animation 
+     loops perfectly with zero jumping.
+  */
+  @keyframes drift {
+    from { background-position: 0 0; }
+    to   { background-position: var(--gap) var(--gap); }
+  }
+</style>

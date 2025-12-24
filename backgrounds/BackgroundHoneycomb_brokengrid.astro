@@ -1,15 +1,14 @@
 ---
-// BackgroundHoneycomb.astro
 const {
-  size = 44,
-  strokeOpacity = 0.14,
+  size = 60,
+  strokeOpacity = 0.2, // Slightly bumped up default so the faint part is visible
   strokeWidth = 1,
-  fade = 0.78,
-  minOpacity = 0.15,
-  spotlightRadius = 320
+  fade = 1,            // Max opacity (center of cursor)
+  minOpacity = 0.15,   // Min opacity (edges/far away) - Adjust this to tune the "base" visibility
+  spotlightRadius = 400
 } = Astro.props;
 
-const patternScale = size / 30;
+const patternScale = size / 20;
 
 const cssVars = {
   '--strokeOpacity': strokeOpacity,
@@ -22,18 +21,27 @@ const cssVars = {
     <defs>
       <pattern 
         id="hex" 
-        width="17.3205" 
-        height="30" 
+        width="17.32" 
+        height="20" 
         patternUnits="userSpaceOnUse"
         patternTransform={`scale(${patternScale})`}
       >
         <path
-          d="M8.66 5 L17.32 10 L17.32 20 L8.66 25 L0 20 L0 10 Z M8.66 0 L8.66 5 M8.66 25 L8.66 30"
+          d="M8.66 1 L16.32 5.5 L16.32 14.5 L8.66 19 L1 14.5 L1 5.5 Z"
           fill="none"
           stroke="rgba(var(--hive-stroke-rgb), var(--strokeOpacity))"
           stroke-width="var(--strokeWidth)"
           stroke-linejoin="round"
           vector-effect="non-scaling-stroke" 
+        />
+        <path
+          d="M17.32 11 L24.98 15.5 L24.98 24.5 L17.32 29 L9.66  Z"
+          fill="none"
+          stroke="rgba(var(--hive-stroke-rgb), var(--strokeOpacity))"
+          stroke-width="var(--strokeWidth)"
+          stroke-linejoin="round"
+          opacity="0.55"
+          vector-effect="non-scaling-stroke"
         />
       </pattern>
 
@@ -45,6 +53,7 @@ const cssVars = {
         r={spotlightRadius}
       >
         <stop offset="0%" stop-color={`rgba(255,255,255,${fade})`} />
+        
         <stop offset="100%" stop-color={`rgba(255,255,255,${minOpacity})`} />
       </radialGradient>
 
@@ -68,8 +77,6 @@ const cssVars = {
     z-index: 0;
     pointer-events: none;
     overflow: hidden;
-    /* Optional: subtle transition for opacity changes */
-    transition: opacity 0.5s ease;
   }
 
   .hive {
@@ -85,43 +92,24 @@ const cssVars = {
 
 <script>
   const gradient = document.getElementById('spotlight-gradient');
-  let ticking = false;
 
-  // 1. Accessibility Check
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  if (gradient && !prefersReducedMotion) {
-    
-    // Helper to update position
-    const updatePosition = (x, y) => {
+  if (gradient) {
+    const setPos = (x, y) => {
       gradient.setAttribute('cx', x.toString());
       gradient.setAttribute('cy', y.toString());
-      ticking = false;
     };
 
-    // Set initial center
-    updatePosition(window.innerWidth / 2, window.innerHeight / 2);
+    // Center initially
+    setPos(window.innerWidth / 2, window.innerHeight / 2);
 
-    // 2. Performance Optimized Mouse Listener
-    const onMove = (clientX, clientY) => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          updatePosition(clientX, clientY);
-        });
-        ticking = true;
-      }
-    };
-
-    // Mouse
+    // Follow mouse
     document.addEventListener('mousemove', (e) => {
-      onMove(e.clientX, e.clientY);
+      setPos(e.clientX, e.clientY);
     });
 
-    // 3. Mobile Touch Support
-    document.addEventListener('touchmove', (e) => {
-      if (e.touches.length > 0) {
-        onMove(e.touches[0].clientX, e.touches[0].clientY);
-      }
-    }, { passive: true });
+    // Handle Resize (keep it roughly centered if user hasn't moved mouse yet)
+    window.addEventListener('resize', () => {
+       // Optional: logic to reset if needed
+    });
   }
 </script>

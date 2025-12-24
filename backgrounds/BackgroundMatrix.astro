@@ -1,0 +1,67 @@
+---
+// BackgroundMatrix.astro
+const { 
+  fontSize = 14, 
+  speed = 45, // Lower is faster
+  density = 0.95 // Probability of a drop resetting
+} = Astro.props;
+---
+
+<canvas id="matrix-canvas"></canvas>
+
+<style>
+  #matrix-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    opacity: 0.08; /* Very subtle background texture */
+    pointer-events: none;
+  }
+</style>
+
+<script define:vars={{ fontSize, speed, density }}>
+  const canvas = document.getElementById('matrix-canvas');
+  const ctx = canvas.getContext('2d');
+
+  let w, h, columns;
+  let drops = [];
+  // const chars = "01"; // Binary
+  const chars = "∑∫π∆Ωµ∂∞"; // Math symbols
+  
+  const resize = () => {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+    columns = Math.floor(w / fontSize);
+    drops = Array(columns).fill(1);
+  };
+
+  const draw = () => {
+    // Fading trail effect: Draw a semi-transparent box over the last frame
+    // In dark mode we fade to black, in light mode to white/bg
+    const isDark = document.documentElement.classList.contains('darkmode');
+    
+    // Fill background to clear previous frame slightly (creates trail)
+    ctx.fillStyle = isDark ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.05)';
+    ctx.fillRect(0, 0, w, h);
+    
+    // Text Color
+    ctx.fillStyle = isDark ? '#0f0' : '#000'; // Green in dark, Black in light
+    ctx.font = `${fontSize}px monospace`;
+
+    for (let i = 0; i < drops.length; i++) {
+      const text = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+      // Reset drop to top randomly
+      if (drops[i] * fontSize > h && Math.random() > density) {
+        drops[i] = 0;
+      }
+      drops[i]++;
+    }
+  };
+
+  resize();
+  window.addEventListener('resize', resize);
+  setInterval(draw, speed);
+</script>

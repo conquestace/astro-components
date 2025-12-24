@@ -1,0 +1,117 @@
+---
+const {
+  opacity = 1,        // Overall opacity of the blobs
+  blur = 60,          // High blur creates the "diffuse" look
+  grainOpacity = 0.05, // Subtle texture
+} = Astro.props;
+---
+
+<div class="bg-wrap" aria-hidden="true">
+  <div class="bg-grain" style={`opacity:${grainOpacity};`}></div>
+
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<style>
+  /* 1. THE WRAPPER 
+     z-index: -1 ensures it stays behind your content AND your Honeycomb 
+     (assuming Honeycomb is z-index: 0)
+  */
+  .bg-wrap {
+    position: fixed;
+    inset: 0;
+    z-index: -1; 
+    pointer-events: none;
+    overflow: hidden;
+    background-color: var(--background); /* Match your theme bg */
+    transition: background-color 0.5s ease;
+  }
+
+  /* 2. THE BLOBS 
+     Common styles for all blobs
+  */
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(var(--blob-blur));
+    opacity: var(--blob-opacity);
+    animation: drift 20s infinite alternate ease-in-out;
+    
+    /* Variables we can override in props/theme */
+    --blob-blur: 80px;
+    --blob-opacity: 0.4;
+  }
+
+  /* Blob 1: Top Left (Indigo-ish) */
+  .blob-1 {
+    top: -10%;
+    left: -10%;
+    width: 50vw;
+    height: 50vh;
+    background: var(--color-blob-1);
+    animation-duration: 25s;
+  }
+
+  /* Blob 2: Top Right (Sky/Cyan) */
+  .blob-2 {
+    top: -10%;
+    right: -10%;
+    width: 40vw;
+    height: 40vh;
+    background: var(--color-blob-2);
+    animation-duration: 30s;
+    animation-delay: -5s;
+  }
+
+  /* Blob 3: Bottom Center (Pink/Purple) */
+  .blob-3 {
+    bottom: -20%;
+    left: 20%;
+    width: 60vw;
+    height: 60vh;
+    background: var(--color-blob-3);
+    animation-duration: 35s;
+    animation-delay: -10s;
+  }
+
+  /* 3. ANIMATION 
+     Slow, gentle movement
+  */
+  @keyframes drift {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(30px, 40px) scale(1.1); }
+    100% { transform: translate(-20px, 20px) scale(0.9); }
+  }
+
+  /* 4. THEME COLORS 
+     Define colors for Light Mode vs Dark Mode
+  */
+  :root {
+    /* Light Mode: Softer, pastel-like */
+    --color-blob-1: rgba(99, 102, 241, 0.5); /* Indigo */
+    --color-blob-2: rgba(56, 189, 248, 0.4); /* Sky */
+    --color-blob-3: rgba(244, 114, 182, 0.3); /* Pink */
+  }
+
+  :global(.darkmode) {
+    /* Dark Mode: Deeper, more saturated but lower opacity to not overpower text */
+    --color-blob-1: rgba(67, 56, 202, 0.35); /* Deep Indigo */
+    --color-blob-2: rgba(14, 165, 233, 0.25); /* Deep Sky */
+    --color-blob-3: rgba(219, 39, 119, 0.25); /* Deep Pink */
+  }
+
+  /* 5. GRAIN TEXTURE 
+     Adds that "expensive paper" feel
+  */
+  .bg-grain {
+    position: absolute;
+    inset: 0;
+    z-index: 1; /* Sits on top of blobs */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+    background-size: 220px 220px;
+    mix-blend-mode: overlay; /* Better blending for grain */
+    pointer-events: none;
+  }
+</style>

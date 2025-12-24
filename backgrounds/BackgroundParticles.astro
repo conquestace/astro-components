@@ -1,0 +1,110 @@
+---
+// BackgroundParticles.astro
+const {
+  count = 60,       // Number of nodes
+  speed = 0.5,      // Particle drift speed
+  connectDist = 150 // Max distance to draw a line
+} = Astro.props;
+---
+
+<canvas id="particle-canvas" class="particle-bg"></canvas>
+
+<style>
+  .particle-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    /* Opacity allows the site background color to shine through */
+    opacity: 0.6;
+  }
+</style>
+
+<script define:vars={{ count, speed, connectDist }}>
+  const canvas = document.getElementById('particle-canvas');
+  const ctx = canvas.getContext('2d');
+  
+  let w, h;
+  let particles = [];
+  
+  // Resize handling
+  const resize = () => {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  };
+  
+  // Particle Class
+  class Particle {
+    constructor() {
+      this.x = Math.random() * w;
+      this.y = Math.random() * h;
+      this.vx = (Math.random() - 0.5) * speed;
+      this.vy = (Math.random() - 0.5) * speed;
+      this.size = Math.random() * 2 + 1;
+    }
+    
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      
+      // Bounce off edges
+      if (this.x < 0 || this.x > w) this.vx *= -1;
+      if (this.y < 0 || this.y > h) this.vy *= -1;
+    }
+    
+    draw() {
+      // Determine color based on theme (checked every frame or set via CSS variable)
+      const isDark = document.documentElement.classList.contains('darkmode');
+      ctx.fillStyle = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Init
+  const init = () => {
+    resize();
+    particles = [];
+    for(let i=0; i<count; i++) particles.push(new Particle());
+  };
+
+  // Animation Loop
+  const animate = () => {
+    ctx.clearRect(0, 0, w, h);
+    
+    const isDark = document.documentElement.classList.contains('darkmode');
+    const strokeColor = isDark ? '255,255,255' : '0,0,0';
+    
+    // Update and Draw Particles
+    particles.forEach((p, index) => {
+      p.update();
+      p.draw();
+      
+      // Draw Connections (O(N^2) complexity, keep count low!)
+      for (let j = index + 1; j < particles.length; j++) {
+        const p2 = particles[j];
+        const dx = p.x - p2.x;
+        const dy = p.y - p2.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        
+        if (dist < connectDist) {
+          ctx.beginPath();
+          // Opacity based on distance
+          const alpha = 1 - (dist / connectDist);
+          ctx.strokeStyle = `rgba(${strokeColor}, ${alpha * 0.2})`; // Low opacity lines
+          ctx.lineWidth = 1;
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+        }
+      }
+    });
+    
+    requestAnimationFrame(animate);
+  };
+
+  window.addEventListener('resize', resize);
+  init();
+  animate();
+</script>
