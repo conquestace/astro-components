@@ -1,0 +1,127 @@
+---
+// BackgroundHoneycomb.astro
+const {
+  size = 60,
+  strokeOpacity = 0.1,
+  strokeWidth = 1,
+  fade = 1,
+  minOpacity = 0.15,
+  spotlightRadius = 400
+} = Astro.props;
+
+const patternScale = size / 30;
+
+const cssVars = {
+  '--strokeOpacity': strokeOpacity,
+  '--strokeWidth': strokeWidth,
+};
+---
+
+<div class="hive-wrap" aria-hidden="true" style={cssVars} transition:persist>
+  <svg class="hive" width="100%" height="100%">
+    <defs>
+      <pattern 
+        id="hex" 
+        width="17.3205" 
+        height="30" 
+        patternUnits="userSpaceOnUse"
+        patternTransform={`scale(${patternScale})`}
+      >
+        <path
+          d="M8.66 5 L17.32 10 L17.32 20 L8.66 25 L0 20 L0 10 Z M8.66 0 L8.66 5 M8.66 25 L8.66 30"
+          fill="none"
+          stroke="rgba(var(--hive-stroke-rgb), var(--strokeOpacity))"
+          stroke-width="var(--strokeWidth)"
+          stroke-linejoin="round"
+          vector-effect="non-scaling-stroke" 
+        />
+      </pattern>
+
+      <radialGradient 
+        id="spotlight-gradient" 
+        gradientUnits="userSpaceOnUse" 
+        cx="50%" 
+        cy="50%" 
+        r={spotlightRadius}
+      >
+        <stop offset="0%" stop-color={`rgba(255,255,255,${fade})`} />
+        <stop offset="100%" stop-color={`rgba(255,255,255,${minOpacity})`} />
+      </radialGradient>
+
+      <mask id="spotlight-mask">
+        <rect width="100%" height="100%" fill="url(#spotlight-gradient)" />
+      </mask>
+    </defs>
+
+    <rect
+      width="100%" height="100%"
+      fill="url(#hex)"
+      mask="url(#spotlight-mask)"
+    />
+  </svg>
+</div>
+
+<style>
+  .hive-wrap {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+    /* Optional: subtle transition for opacity changes */
+    transition: opacity 0.5s ease;
+  }
+
+  .hive {
+    width: 100%;
+    height: 100%;
+    --hive-stroke-rgb: 0, 0, 0;
+  }
+
+  :global(.darkmode) .hive {
+    --hive-stroke-rgb: 255, 255, 255;
+  }
+</style>
+
+<script>
+  const gradient = document.getElementById('spotlight-gradient');
+  let ticking = false;
+
+  // 1. Accessibility Check
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (gradient && !prefersReducedMotion) {
+    
+    // Helper to update position
+    const updatePosition = (x, y) => {
+      gradient.setAttribute('cx', x.toString());
+      gradient.setAttribute('cy', y.toString());
+      ticking = false;
+    };
+
+    // Set initial center
+    updatePosition(window.innerWidth / 2, window.innerHeight / 2);
+
+    // 2. Performance Optimized Mouse Listener
+    const onMove = (clientX, clientY) => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          updatePosition(clientX, clientY);
+        });
+        ticking = true;
+      }
+    };
+
+    // Mouse
+    document.addEventListener('mousemove', (e) => {
+      onMove(e.clientX, e.clientY);
+    });
+
+    // 3. Mobile Touch Support
+    document.addEventListener('touchmove', (e) => {
+      if (e.touches.length > 0) {
+        onMove(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+  }
+</script>
